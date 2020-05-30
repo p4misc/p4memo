@@ -115,11 +115,9 @@ Helix Authentication Extensionは、Helix Core 2019.1以降で実装されたExt
            name-identifier:
                    nameID
            non-sso-groups:
-                   p4systemoperator
+                   admins
            non-sso-users:
                    super
-                   p4service
-                   p4operator
            user-identifier:
                    email
    ```
