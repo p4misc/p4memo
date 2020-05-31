@@ -274,8 +274,43 @@ Helix Authentication Serviceの導入方法を記します。
    | SAML_NAMEID_FIELD | nameID がない場合に使用されるユーザ・プロファイルのプロパティの名前です。 | 注意: Node はファイルの内容をメモリにキャッシュするため、設定ファイルを変更するにはサービスを再起動する必要があります。 |
    | SAML_NAMEID_FORMAT | SAML ID プロバイダから期待される希望の NameID 形式。デフォルトは urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified で、SAML 仕様で定義されている任意の形式に設定することができます。 | 注意: 指定されていない場合、サービスは電子メールとサブを試行し、それらが失敗した場合、サービスは一意の識別子を生成します。この値は、ユーザ・データの一意のキーとして使用される。ID プロバイダが返す生のユーザ・プロファイルを見るには、デバッグ・ロギングを有効にし（以下の DEBUG エントリを参照）、ログ出力で「レガシー設定 nameID」を確認する。 |
    | SVC_BASE_URI | Helix Authentication ServiceのNode.jsのURL | - |
+   | SP_CERT_FILE | Helix Authentication Serviceのサーバ証明書ファイルのパス　| なし |
+   | SP_KEY_FILE | Helix Authentication Serviceの秘密鍵ファイルのパス　| なし |
 
 1. サービスを再起動してIdPの設定を適用します。
    ```
    pm2 startOrReload ecosystem.config.js
    ```
+
+## `ecosystem.config.js`の設定例
+
+IdPごとの設定方法は以下に記載されています。
+参照ドキュメント内に記載されている設定が最小限の設定になり、記載されていない設定は必須ではないと思われます。
+参照: [Administrator's Guide for Helix Authentication Service](https://github.com/perforce/helix-authentication-service/blob/master/docs/Administrator-Guide-for-Helix-Authentication-Service-v2019.1.md)
+
+Oktaの場合は、以下の方法で必要な設定値を取得します。
+Helix Authentication ServiceのURL(=SVC_BASE_URI)が、https://auth-svc.example.com:3000であるとして説明します。
+
+1. [Applications] > [Applications] を選択します。
+1. [Add Appliation]をクリックします。
+1. [Create New App]をクリックします。
+1. [Platform]で[Web]を選択します。
+1. [Sign on method]で[SAML 2.0]を選択します。
+1. [Create]をクリックします。
+1. [App name]に[Helix Authentication Service]と入力します。
+   ※ 他の名前でも構いません。
+1. [Next]をクリックします。
+1. [Single sign on URL]に、`https://auth-svc.example.com:3000/saml/sso` と入力します。
+1. [Audience URI]に、`urn:example:sp` と入力します。
+   ※ `ecosystem.config.js`の`SAML_SP_ISSUER`と一致させます。
+1. [Show Advanced Settings]をクリックします。
+1. [Enable Single Logout]をチェックします。
+1. [Single Logout URL]に、`https://auth-svc.example.com:3000/saml/slo` と入力します。
+1. [SP Issuer]に、urn:example:spと入力します。
+   ※ `ecosystem.config.js`の`SAML_SP_ISSUER`と一致させます。
+1. [Signature Certificate]に、`certs/server.crt`をアップロードします。
+1. [Next]をクリックします。
+1. [View Setup Instructions]をクリックします。
+1. [Identity Provider Single Sign-On URL]が、`SAML_IDP_SSO_URL`の値になります。
+1. [Identity Provider Single Logout URL]が、`SAML_IDP_SLO_URL`の値になります。
+1. [X.509 Certificate]を保存したファイルのパスを、`IDP_CERT_FILE`に設定します。
