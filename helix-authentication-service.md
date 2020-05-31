@@ -215,6 +215,7 @@ Helix Authentication Extensionは、Helix Core 2019.1以降で実装されたExt
 ## Helix Authentication Serviceの導入
 
 Helix Authentication Serviceの導入方法を記します。
+
 参照: [Administrator's Guide for Helix Authentication Service](https://github.com/perforce/helix-authentication-service/blob/master/docs/Administrator-Guide-for-Helix-Authentication-Service-v2019.1.md)
 
 1. GitHubからhelix-authentication-serviceを取得します。
@@ -298,6 +299,7 @@ Helix Authentication ServiceのURL(=SVC_BASE_URI)が、https://auth-svc.example.
 1. [Sign on method]で[SAML 2.0]を選択します。
 1. [Create]をクリックします。
 1. [App name]に[Helix Authentication Service]と入力します。
+
    ※ 他の名前でも構いません。
 1. [Next]をクリックします。
 1. [Single sign on URL]に、`https://auth-svc.example.com:3000/saml/sso` と入力します。
@@ -307,6 +309,7 @@ Helix Authentication ServiceのURL(=SVC_BASE_URI)が、https://auth-svc.example.
 1. [Enable Single Logout]をチェックします。
 1. [Single Logout URL]に、`https://auth-svc.example.com:3000/saml/slo` と入力します。
 1. [SP Issuer]に、urn:example:spと入力します。
+
    ※ `ecosystem.config.js`の`SAML_SP_ISSUER`と一致させます。
 1. [Signature Certificate]に、`certs/server.crt`をアップロードします。
 1. [Next]をクリックします。
@@ -314,3 +317,25 @@ Helix Authentication ServiceのURL(=SVC_BASE_URI)が、https://auth-svc.example.
 1. [Identity Provider Single Sign-On URL]が、`SAML_IDP_SSO_URL`の値になります。
 1. [Identity Provider Single Logout URL]が、`SAML_IDP_SLO_URL`の値になります。
 1. [X.509 Certificate]を保存したファイルのパスを、`IDP_CERT_FILE`に設定します。
+
+
+
+`ecosystem.config.js`の設定例は以下の通りです。
+```js
+module.exports = {
+  apps: [{
+    name: 'auth-svc',
+    script: './bin/www',
+    env: {
+      NODE_ENV: 'production',
+      SAML_IDP_SSO_URL: 'http://***okta.com/***/saml/sso',
+      SAML_IDP_SLO_URL: 'http://***okta.com/***/saml/slo',
+      SAML_SP_ISSUER: 'urn:example:sp',
+      IDP_CERT_FILE: 'certs/idp.crt',
+      SP_CERT_FILE: 'certs/server.crt',
+      SP_KEY_FILE: 'certs/server.key',
+      SVC_BASE_URI: 'https://auth-svc.example.com:3000'
+    }
+  }]
+}
+```
