@@ -210,11 +210,30 @@ Helix Authentication Extensionは、Helix Core 2019.1以降で実装されたExt
    p4 configure set auth.sso.allow.passwd=1
    ```
 
+1. Helix Coreの認証方式をチケット認証に設定します。
+   ```bash
+   p4 configure set security=3
+   ```
+
+
+
+## Helix Coreへのユーザの追加とパスワードの設定
+
+IdPの認証サービスを使用するユーザかどうかに関わらず、ユーザの情報を事前にHelix Coreに登録しておく必要があります。
+
+また、ランダムなダミーパスワードでも構わないので、IdPの認証サービスを使用するユーザにも以下のような方法でパスワードを設定しておく必要があります。
+```bash
+yes $(uuidgen) | p4 -u super passwd username
+```
+- `super`は、Helix Coreのsuper権限をもつユーザのアカウント名です。
+- `username`には、パスワードを設定するHelix Coreユーザのアカウント名を記述します。
 
 
 ## Helix Authentication Serviceの導入
 
 Helix Authentication Serviceの導入方法を記します。
+
+**注意** : 現時点でHelix Authentication Serviceを用いたHelix Coreへのログインに成功していません。成功した場合は、注意点を添えて更新します。
 
 参照: [Administrator's Guide for Helix Authentication Service](https://github.com/perforce/helix-authentication-service/blob/master/docs/Administrator-Guide-for-Helix-Authentication-Service-v2019.1.md)
 
@@ -339,3 +358,9 @@ module.exports = {
   }]
 }
 ```
+
+Helix Authentication Serviceを用いてHelix Coreにログインするまでのフローです。
+
+![HAS_SEQUENCE.png](https://github.com/p4misc/p4memo/blob/master/images/HAS_SEQUENCE.png)
+
+出典: [Administrator's Guide for Helix Authentication Service](https://github.com/perforce/helix-authentication-service/blob/master/docs/Administrator-Guide-for-Helix-Authentication-Service-v2019.1.md)
