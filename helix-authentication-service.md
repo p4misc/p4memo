@@ -209,3 +209,73 @@ Helix Authentication Extensionは、Helix Core 2019.1以降で実装されたExt
    ```bash
    p4 configure set auth.sso.allow.passwd=1
    ```
+
+
+
+## Helix Authentication Serviceの導入
+
+Helix Authentication Serviceの導入方法を記します。
+参照: [Administrator's Guide for Helix Authentication Service](https://github.com/perforce/helix-authentication-service/blob/master/docs/Administrator-Guide-for-Helix-Authentication-Service-v2019.1.md)
+
+1. GitHubからhelix-authentication-serviceを取得します。
+   ```bash
+   git clone https://github.com/perforce/helix-authentication-service
+   ```
+
+1. Helix Authentication Serviceをインストールします。
+   ```bash
+   cd helix-authentication-service
+   ./install.sh
+   ```
+   sudoが実行できるユーザでインストールをしてください。
+
+   インストールスクリプトが対応していない環境の場合は、次の調整で動作する場合があります。
+   - 調整前:
+     ```bash
+     if [ -e "/etc/redhat-release" ]; then
+         PLATFORM=redhat
+     elif [ -e "/etc/debian_version" ]; then
+         PLATFORM=debian
+     else
+         # Exit now if this is not a supported Linux distribution
+         die "Could not determine OS distribution"
+     fi
+     ```
+   - 調整後: (Amazon Linux 2の場合)
+     ```bash
+     if [ -e "/etc/redhat-release" ]; then
+         PLATFORM=redhat
+     elif [ -e "/etc/debian_version" ]; then
+         PLATFORM=debian
+     elif [ -e "/etc/system-release" ]; then
+         PLATFORM=redhat
+     else
+         # Exit now if this is not a supported Linux distribution
+         die "Could not determine OS distribution"
+     fi
+     ```
+
+1. 連携するIdPの設定を行います。
+   ```bash
+   vi ecosystem.config.js
+   ```
+
+   SAMLで連携する場合は、以下を参考にして設定します。
+   | 名前 | 説明 | デフォルト |
+   | ----- | ----- | ----- |
+   | IDP_CERT_FILE | 着信する SAML応答の署名を検証するために使用される、ID プロバイダの公開証明書を含むファイルのパス。これは必須ではないが、セキュリティの追加レイヤーとして機能する。 | なし |
+   | SAML_IDP_SSO_URL | IdP Single Sign-On サービスの URL | なし |
+   | SAML_IDP_SLO_URL | IdP シングルログアウトサービスの URL | なし |
+   | SAML_SP_ISSUER | SAML IdP として Helix 認証サービスを使用するサービス・プロバイダの ID プロバイダ。 | urn:example:sp |
+   | SAML_IDP_ISSUER | IDプロバイダのエンティティ識別子。これは必須ではありませんが、提供されると、着信ログアウト要求/応答に対して IdP 発行者が検証されます。 | - |
+   | IDP_CONFIG_FILE | 認証サービスに接続する SAML サービスプロバイダを定義する設定ファイルのパス。 | 注意：認証サービスが SAML ID プロバイダとして動作している場合、認証サービスは auth サービス・インストール内の構成ファイルから設定の一部を読み取る。既定では、このファイルは saml_idp.conf.js という名前で、IDP_CONFIG_FILE 環境変数によって識別される。このファイルは、Node.js の require() |
+   | SAML_SP_AUDIENCE | AudienceRestriction アサーションのサービス・プロバイダのオーディエンス値。 | なし |
+   | SAML_AUTHN_CONTEXT | authn コンテキストは、ユーザが IdP で認証する方法を定義します。通常、ほとんどのシステムではデフォルト値で動作しますが、この値を変更する必要があるかもしれません。例えば、Azure では、特定のケースでは urn:oasis:names:tc:SAML:2.0:ac:classs:Password に設定する必要があるかもしれません。 | urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport |
+   | SAML_NAMEID_FIELD | nameID がない場合に使用されるユーザ・プロファイルのプロパティの名前です。 | 注意: Node はファイルの内容をメモリにキャッシュするため、設定ファイルを変更するにはサービスを再起動する必要があります。 |
+   | SAML_NAMEID_FORMAT | SAML ID プロバイダから期待される希望の NameID 形式。デフォルトは urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified で、SAML 仕様で定義されている任意の形式に設定することができます。 | 注意: 指定されていない場合、サービスは電子メールとサブを試行し、それらが失敗した場合、サービスは一意の識別子を生成します。この値は、ユーザ・データの一意のキーとして使用される。ID プロバイダが返す生のユーザ・プロファイルを見るには、デバッグ・ロギングを有効にし（以下の DEBUG エントリを参照）、ログ出力で「レガシー設定 nameID」を確認する。 |
+   | SVC_BASE_URI | Helix Authentication ServiceのNode.jsのURL | - |
+
+1. サービスを再起動してIdPの設定を適用します。
+   ```
+   pm2 startOrReload ecosystem.config.js
+   ```
