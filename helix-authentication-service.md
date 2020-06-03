@@ -1,3 +1,17 @@
+## SSL証明書の手配
+
+実際にはSSL証明書を手配しますが、ここでは試験的に構築しますので自己署名証明書を使用します。
+```bash
+openssl req -x509 -nodes -days 3650 -newkey rsa:4096 -keyout ca.key -out ca.crt -subj "/CN=FakeAuthority"
+openssl req -nodes -days 3650 -newkey rsa:4096 -keyout client.key -out client.csr -subj "/CN=LoginExtension"
+openssl x509 -req -in client.csr -CA ca.crt -CAkey ca.key -out client.crt -set_serial 01 -days 3650
+openssl req -x509 -nodes -days 3650 -newkey rsa:4096 -keyout server.key -out server.crt -subj "/CN=AuthService"
+```
+
+上記の手順で作成したファイルのうち、`ca.crt`、`client.crt`、`client.key`、`server.crt`、`server.key`を使用します。
+
+
+
 ## Helix Authentication Extensionの導入
 
 Helix Authentication Extensionの導入方法を記します。
@@ -31,6 +45,13 @@ Helix Authentication Extensionは、Helix Core 2019.1以降で実装されたExt
 1. GitHubからhelix-authentication-extensionを取得します。
    ```bash
    git clone https://github.com/perforce/helix-authentication-extension
+   ```
+
+1. `ca.crt`、`client.crt`、`client.key`を置き換えます。
+   ```bash
+   cp ca.crt ./helix-authentication-extension/loginhook
+   cp client.crt ./helix-authentication-extension/loginhook
+   cp client.key ./helix-authentication-extension/loginhook
    ```
 
 1. パッケージを作成します。
@@ -229,6 +250,7 @@ yes $(uuidgen) | p4 -u super passwd username
 - `username`には、パスワードを設定するHelix Coreユーザのアカウント名を記述します。
 
 
+
 ## Helix Authentication Serviceの導入
 
 Helix Authentication Serviceの導入方法を記します。
@@ -274,6 +296,13 @@ Helix Authentication Serviceの導入方法を記します。
          die "Could not determine OS distribution"
      fi
      ```
+
+1. `ca.crt`、`server.crt`、`server.key`を置き換えます。
+   ```bash
+   cp ca.crt ./helix-authentication-service/certs
+   cp server.crt ./helix-authentication-service/certs
+   cp server.key ./helix-authentication-service/certs
+   ```
 
 1. 連携するIdPの設定を行います。
    ```bash
@@ -323,21 +352,25 @@ Helix Authentication ServiceのURL(=SVC_BASE_URI)が、https://auth-svc.example.
 1. [Next]をクリックします。
 1. [Single sign on URL]に、`https://auth-svc.example.com:3000/saml/sso` と入力します。
 1. [Audience URI]に、`urn:example:sp` と入力します。
+
    ※ `ecosystem.config.js`の`SAML_SP_ISSUER`と一致させます。
+1. [Application username]で[Email]を選択します。
 1. [Show Advanced Settings]をクリックします。
 1. [Enable Single Logout]をチェックします。
 1. [Single Logout URL]に、`https://auth-svc.example.com:3000/saml/slo` と入力します。
 1. [SP Issuer]に、urn:example:spと入力します。
 
    ※ `ecosystem.config.js`の`SAML_SP_ISSUER`と一致させます。
-1. [Signature Certificate]に、`certs/server.crt`をアップロードします。
+1. [Signature Certificate]に、`helix-authentication-service/certs/server.crt`をアップロードします。
 1. [Next]をクリックします。
+1. [App type]で[This is an internal app that we have created]をチェックします。
+1．[Finish]をクリックします。
 1. [View Setup Instructions]をクリックします。
 1. [Identity Provider Single Sign-On URL]が、`SAML_IDP_SSO_URL`の値になります。
 1. [Identity Provider Single Logout URL]が、`SAML_IDP_SLO_URL`の値になります。
 1. [X.509 Certificate]を保存したファイルのパスを、`IDP_CERT_FILE`に設定します。
-
-
+1. [X.509 Certificate]を保存したファイルを、`helix-authentication-service/certs`に配置します。
+1. [Assignments]にて、作成したアプリケーションにOktaユーザを割り当てます。
 
 `ecosystem.config.js`の設定例は以下の通りです。
 ```js
@@ -346,6 +379,7 @@ module.exports = {
     name: 'auth-svc',
     script: './bin/www',
     env: {
+      CA_CERT_FILE: 'certs/ca.crt',
       NODE_ENV: 'production',
       SAML_IDP_SSO_URL: 'http://***okta.com/***/saml/sso',
       SAML_IDP_SLO_URL: 'http://***okta.com/***/saml/slo',
@@ -353,7 +387,8 @@ module.exports = {
       IDP_CERT_FILE: 'certs/idp.crt',
       SP_CERT_FILE: 'certs/server.crt',
       SP_KEY_FILE: 'certs/server.key',
-      SVC_BASE_URI: 'https://auth-svc.example.com:3000'
+      SVC_BASE_URI: 'https://auth-svc.example.com:3000',
+      DEBUG: 'auth:*',
     }
   }]
 }
@@ -364,3 +399,15 @@ Helix Authentication Serviceを用いてHelix Coreにログインするまでの
 ![HAS_SEQUENCE.png](https://github.com/p4misc/p4memo/blob/master/images/HAS_SEQUENCE.png)
 
 出典: [Administrator's Guide for Helix Authentication Service](https://github.com/perforce/helix-authentication-service/blob/master/docs/Administrator-Guide-for-Helix-Authentication-Service-v2019.1.md)
+
+
+
+## デバッグ方法
+
+- Helix Authentication Extension側のログ
+  - インスタンス設定で`enable-logging`をtrueにすると、*P4ROOT*`/server.extensions.dir`に`log.json`という名称のログが出力されます。
+    *P4ROOT*は、Helix Coreのメタデータが配置されているディレクトリのパスになります。
+
+- Helix Authentication Service側のログ
+  - `ecosystem.config.js`に`DEBUG`を記述した場合、`~/.pm2/logs/auth-svc-out.log`にデバッグログが出力されます。
+    *デバッグログの接頭語は、`ecosystem.config.js`の`name`の値になります。
