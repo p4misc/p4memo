@@ -1,6 +1,6 @@
 ## SSL証明書の手配
 
-実際にはSSL証明書を手配しますが、ここでは試験的に構築しますので自己署名証明書を使用します。
+実際には認証局から発行されたSSL証明書を使用しますが、ここでは試験的に構築しますので自己署名証明書を使用します。
 ```bash
 openssl req -x509 -nodes -days 3650 -newkey rsa:4096 -keyout ca.key -out ca.crt -subj "/CN=FakeAuthority"
 openssl req -nodes -days 3650 -newkey rsa:4096 -keyout client.key -out client.csr -subj "/CN=LoginExtension"
@@ -14,7 +14,7 @@ openssl req -x509 -nodes -days 3650 -newkey rsa:4096 -keyout server.key -out ser
 
 ## Helix Authentication Extensionの導入
 
-Helix Authentication Extensionの導入方法を記します。
+Helix Authentication Extensionの導入方法を記します。  
 参照: [Administrator's Guide for Helix Authentication Extension](https://github.com/perforce/helix-authentication-extension/blob/master/docs/Administrator-Guide-for-Helix-Authentication-Extension-v2019.1.md)
 
 Helix Authentication Extensionは、Helix Core 2019.1以降で実装されたExtensionsの機能を必要とします。
@@ -333,11 +333,11 @@ Helix Authentication Serviceの導入方法を記します。
 
 ## `ecosystem.config.js`の設定例
 
-IdPごとの設定方法は以下に記載されています。
-参照ドキュメント内に記載されている設定が最小限の設定になり、記載されていない設定は必須ではないと思われます。
+IdPごとの設定方法は以下に記載されています。  
+参照ドキュメント内に記載されている設定が最小限の設定になり、記載されていない設定は必須ではないと思われます。  
 参照: [Administrator's Guide for Helix Authentication Service](https://github.com/perforce/helix-authentication-service/blob/master/docs/Administrator-Guide-for-Helix-Authentication-Service-v2019.1.md)
 
-Oktaの場合は、以下の方法で必要な設定値を取得します。
+Oktaの場合は、以下の方法で必要な設定値を取得します。  
 Helix Authentication ServiceのURL(=SVC_BASE_URI)が、https://auth-svc.example.com:3000であるとして説明します。
 
 1. [Applications] > [Applications] を選択します。
@@ -405,9 +405,9 @@ Helix Authentication Serviceを用いてHelix Coreにログインするまでの
 ## デバッグ方法
 
 - Helix Authentication Extension側のログ
-  - インスタンス設定で`enable-logging`をtrueにすると、*P4ROOT*`/server.extensions.dir`に`log.json`という名称のログが出力されます。
+  - インスタンス設定で`enable-logging`をtrueにすると、*P4ROOT*`/server.extensions.dir`に`log.json`という名称のログが出力されます。  
     *P4ROOT*は、Helix Coreのメタデータが配置されているディレクトリのパスになります。
 
 - Helix Authentication Service側のログ
-  - `ecosystem.config.js`に`DEBUG`を記述した場合、`~/.pm2/logs/auth-svc-out.log`にデバッグログが出力されます。
+  - `ecosystem.config.js`に`DEBUG`を記述した場合、`~/.pm2/logs/auth-svc-out.log`にデバッグログが出力されます。  
     *デバッグログの接頭語は、`ecosystem.config.js`の`name`の値になります。
